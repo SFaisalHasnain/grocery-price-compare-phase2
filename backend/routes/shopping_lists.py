@@ -12,7 +12,7 @@ from models.shopping_list import (
     CategorySuggestion
 )
 from models.user import User
-from routes.auth import get_current_user
+from services.auth_dependencies import get_current_user
 from services.database import get_database
 
 router = APIRouter(prefix="/shopping-lists", tags=["shopping-lists"])
