@@ -89,6 +89,8 @@ class GroceryAppTester:
         if success and 'access_token' in response:
             self.token = response['access_token']
             self.user_id = response['user']['id']
+            print(f"Registered user: {self.test_user}")
+            print(f"Got token: {self.token[:10]}...")
             return True
         return False
 
@@ -107,6 +109,7 @@ class GroceryAppTester:
         
         if success and 'access_token' in response:
             self.token = response['access_token']
+            print(f"Got new token: {self.token[:10]}...")
             return True
         return False
 
@@ -131,6 +134,7 @@ class GroceryAppTester:
         if success and isinstance(response, list) and len(response) > 0:
             # Save store IDs for later tests
             self.store_ids = [store['id'] for store in response[:2]]
+            print(f"Got store IDs: {self.store_ids}")
             return True
         return False
 
@@ -156,6 +160,15 @@ class GroceryAppTester:
         if success and 'products' in response and len(response['products']) > 0:
             # Save product IDs for later tests
             self.product_ids = [product['id'] for product in response['products'][:2]]
+            print(f"Got product IDs: {self.product_ids}")
+            
+            # Also get store IDs from the first product's prices
+            if response['products'][0]['prices']:
+                first_product_store_id = response['products'][0]['prices'][0]['store_id']
+                if first_product_store_id not in self.store_ids:
+                    self.store_ids.append(first_product_store_id)
+                print(f"Added store ID from product: {first_product_store_id}")
+            
             return True
         return False
 
@@ -192,6 +205,7 @@ class GroceryAppTester:
         
         if success and 'id' in response:
             self.shopping_list_id = response['id']
+            print(f"Created shopping list with ID: {self.shopping_list_id}")
             return True
         return False
 
@@ -229,21 +243,28 @@ class GroceryAppTester:
             print("❌ Product or store IDs not available")
             return False
             
-        success, response = self.run_test(
-            "Add to Basket",
-            "POST",
-            "basket/items",
-            201,
-            data={
-                "product_id": self.product_ids[0],
-                "store_id": self.store_ids[0],
-                "quantity": 1
-            }
-        )
+        # Try each product with each store until one works
+        for product_id in self.product_ids:
+            for store_id in self.store_ids:
+                print(f"Trying to add product {product_id} from store {store_id} to basket...")
+                success, response = self.run_test(
+                    f"Add to Basket (Product: {product_id}, Store: {store_id})",
+                    "POST",
+                    "basket/items",
+                    201,
+                    data={
+                        "product_id": product_id,
+                        "store_id": store_id,
+                        "quantity": 1
+                    }
+                )
+                
+                if success and 'items' in response and len(response['items']) > 0:
+                    self.basket_item_id = response['items'][0]['id']
+                    print(f"Added item to basket with ID: {self.basket_item_id}")
+                    return True
         
-        if success and 'items' in response and len(response['items']) > 0:
-            self.basket_item_id = response['items'][0]['id']
-            return True
+        print("❌ Failed to add any product to basket")
         return False
 
     def test_get_basket(self):
@@ -323,7 +344,10 @@ class GroceryAppTester:
         self.test_health_check()
         
         # Authentication tests
-        self.test_register()
+        if not self.test_register():
+            print("❌ Registration failed, stopping tests")
+            return False
+            
         self.test_login()
         self.test_get_current_user()
         
