@@ -4,7 +4,7 @@ import re
 
 from models.product import Product, ProductSearch, ProductResponse
 from models.user import User
-from routes.auth import get_current_user
+from services.auth_dependencies import get_current_user
 from services.database import get_database
 
 router = APIRouter(prefix="/products", tags=["products"])
