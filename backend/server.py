@@ -6,6 +6,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Import services
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
 from services.database import connect_to_mongo, close_mongo_connection, get_database
 from services.mock_data import create_mock_stores, create_mock_products
 
