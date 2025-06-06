@@ -4,7 +4,7 @@ from typing import Dict, Optional
 from models.basket import Basket, BasketItem, BasketItemCreate, BasketItemUpdate, BasketSummary
 from models.user import User
 from models.product import Product
-from routes.auth import get_current_user
+from services.auth_dependencies import get_current_user
 from services.database import get_database
 from datetime import datetime
 
